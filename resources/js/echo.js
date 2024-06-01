@@ -80,7 +80,7 @@ function updateList(product) {
     if (typeof product['score'] === 'number') {
         if (product['score'] > 0.5)
             row_class = 'table-success';
-        else if (product['score'] < 0.5)
+        else if (product['score'] < -0.5)
             row_class = 'table-danger';
         else
             row_class = 'table-warning';

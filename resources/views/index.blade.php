@@ -89,7 +89,7 @@
                                     if (isset($description['score']) && is_numeric($description['score'])) {
                                         if ($description['score'] > 0.5)
                                             $row_class = 'table-success';
-                                        else if ($description['score'] < 0.5)
+                                        else if ($description['score'] < -0.5)
                                             $row_class = 'table-danger';
                                         else
                                             $row_class = 'table-warning';
