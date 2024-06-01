@@ -1,6 +1,7 @@
 <?php
 
 namespace SunrayEu\ProductDescriptionAnalyser\App\Jobs;
+
 use SunrayEu\ProductDescriptionAnalyser\App\Events\ProductDescriptionProcessed;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\Product;
 
@@ -10,9 +11,11 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+
 use Google\Cloud\Language\LanguageClient;
 
-class AnalyzeProductDescription implements ShouldQueue
+class AnalyzeProductDescription implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -24,6 +27,14 @@ class AnalyzeProductDescription implements ShouldQueue
     public function __construct(Product $product)
     {
         $this->product = $product;
+    }
+
+    /**
+     * Get the unique ID for the job.
+     */
+    public function uniqueId(): string
+    {
+        return $this->product->id;
     }
 
     /**

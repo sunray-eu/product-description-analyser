@@ -84,37 +84,98 @@ class FileController extends Controller
 
                 AnalyzeProductDescription::dispatch($product_from_db);
             }
+            $file_data_obj['id'] = $product_from_db->id;
 
             $output_data[] = $file_data_obj;
         }
 
-
         // here set file to session
-        $request->session()->put('file_hash', $file_md5);
+        $this->setSelectedFileHash($file_md5);
 
-        return redirect('/')->with('success', 'File uploaded successfully!')
-            ->with('descriptions', $output_data)
-            ->with('filename', $file_name);
+        return view('index', [
+            'descriptions' => $output_data,
+            'filename' => $file_name
+        ])->with('success', 'File uploaded successfully!');
+    }
+
+    private function getSelectedFileHash(): string|null
+    {
+        return session()->get('file_hash');
+    }
+
+    private function setSelectedFileHash(string $hash): void
+    {
+        session()->put('file_hash', $hash);
+    }
+
+    private function removeSelectedFileHash(): void
+    {
+        session()->remove('file_hash');
     }
 
     public function index(Request $request)
     {
         $products_data = [];
 
-        // Get the file hash
-        $fileHash = $request->session()->get('file_hash');
+        // Get the file hash of currently selected file
+        $fileHash = $this->getSelectedFileHash();
 
         $file_db = File::firstWhere('hash', '=', $fileHash);
 
         if ($file_db) {
             $products_data = $file_db->products();
-            $products_data = $products_data->get(['name', 'description', 'hash', 'score'])->toArray();
-        }
-        // TODO: add here analyser run for not analysed descriptions
+            $products_data = $products_data->get(['id', 'name', 'description', 'hash', 'score']);
 
-        return view('upload', [
+            // Reanalyse empty
+            if ($products_data) {
+                foreach ($products_data as $product) {
+                    // TODO: fix, not working
+                    // AnalyzeProductDescription::dispatch($product);
+                }
+
+                $products_data = $products_data->toArray();
+            }
+        }
+
+        return view('index', [
             'descriptions' => $products_data,
             'filename' => $file_db ? $file_db->name : null
         ]);
+    }
+
+    public function reanalyse(Request $request)
+    {
+        $products_data = [];
+
+        // Get current file
+        $fileHash = $this->getSelectedFileHash();
+
+        $file_db = File::firstWhere('hash', '=', $fileHash);
+
+        if ($file_db) {
+            $file_db->products()->update(['score' => NULL]);
+
+            $products_data = $file_db->products();
+            $products_data = $products_data->get(['id', 'name', 'description', 'hash', 'score']);
+
+            // Reanalyse all
+            if ($products_data) {
+                foreach ($products_data as $product) {
+                    AnalyzeProductDescription::dispatch($product);
+                }
+
+                $products_data = $products_data->toArray();
+            }
+        }
+
+        return view('index', [
+            'descriptions' => $products_data,
+            'filename' => $file_db ? $file_db->name : null
+        ]);
+    }
+
+    public function deselect(Request $request){
+        $this->removeSelectedFileHash();
+        return view('index', ['descriptions' => [], 'filename' => '']);
     }
 }

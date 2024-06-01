@@ -12,10 +12,17 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\Product;
 
-class ProductDescriptionProcessed implements ShouldBroadcastNow
+class ProductDescriptionProcessed implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
     public $product;
+
+    /**
+     * The name of the queue on which to place the broadcasting job.
+     *
+     * @var string
+     */
+    public $queue = 'high';
 
     /**
      * Create a new event instance.

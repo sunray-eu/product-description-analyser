@@ -13,17 +13,38 @@ window.Echo = new Echo({
     enabledTransports: ['ws', 'wss'],
 });
 
+// add global variable descriptions
+
 // TODO: fix
-function updateScores(scores) {
-    const validScores = scores.filter(score => typeof score === 'number');
-    if (validScores.length > 0) {
-        const dasboardElement = document.getElementById('dashboard');
+function pushToDescriptions(product) {
+    if (window.descriptions === undefined || typeof window.descriptions !== 'object') {
+        window.descriptions = {};
+    }
 
-        const minScore = Math.min(...validScores);
-        const maxScore = Math.max(...validScores);
+    window.descriptions[product.id] = product
+    return window.descriptions;
+}
 
-        const minScoreDescription = scores.find(score => score === minScore);
-        const maxScoreDescription = scores.find(score => score === maxScore);
+function getDescriptions() {
+    if (window.descriptions === undefined || typeof window.descriptions !== 'object') {
+        window.descriptions = {};
+    }
+
+    return Object.values(window.descriptions);
+}
+
+function updateScores(descriptions) {
+    const validScores = descriptions.length > 0 && descriptions.every(description => typeof description['score'] === 'number' && description['score'] !== undefined);
+
+    if (validScores) {
+        const allScores = descriptions.map((description) => description.score)
+        const resultsContentElement = document.getElementById('dashboard');
+
+        const minScore = Math.min(...allScores);
+        const maxScore = Math.max(...allScores);
+
+        const minScoreDescription = descriptions.find(description => description.score === minScore);
+        const maxScoreDescription = descriptions.find(description => description.score === maxScore);
 
         const minScoreElmLink = document.createElement('a');
         const maxScoreElmLink = document.createElement('a');
@@ -43,17 +64,18 @@ function updateScores(scores) {
         minScoreElm.append(minScoreElmLink);
         maxScoreElm.append(maxScoreElmLink);
 
-        dasboardElement.append(minScore);
-        dasboardElement.append(maxScore);
+        resultsContentElement.append(minScoreElm);
+        resultsContentElement.append(maxScoreElm);
 
-        document.getElementById('dashboard-loader').remove();
+        document.getElementById('dashboard-loader')?.remove();
 
         // Update links with the corresponding description hash
     }
 }
 
-export default function updateList(product) {
-    const description_row = document.getElementById(`description-${product.hash}`);
+function updateList(product) {
+    const description_row = document.getElementById(product.hash);
+
     let row_class;
     if (typeof product['score'] === 'number') {
         if (product['score'] > 0.5)
@@ -69,14 +91,12 @@ export default function updateList(product) {
 
     // TODO: fix this
     // Update the scores in the list
-    const scores = Array.from(document.getElementsByClassName('score')).map(scoreElement => {
-        const score = parseFloat(scoreElement.textContent);
-        return typeof (score) == 'number' ? score : null;
-    });
-    updateScores(scores);
+    pushToDescriptions(product);
+    updateScores(getDescriptions());
 }
 
 window.Echo.channel('product.updates')
     .listen('.updated', (e) => {
+        console.log("product.updates received with:", e.product)
         updateList(e.product);
     });
