@@ -38,11 +38,9 @@ class ProductDescriptionProcessed implements ShouldBroadcast
      *
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-    public function broadcastOn(): array
+    public function broadcastOn(): Channel
     {
-        return [
-            new Channel('product.updates'),
-        ];
+        return new Channel('product.updates');
     }
 
     /**

@@ -1,6 +1,9 @@
 import $ from 'jquery';
 
-$(document).ready(function() {
+$(document).ready(function () {
+    // fix scroll behavior
+    $("html").css('scroll-behavior', 'auto');
+
     // Initialize descriptions if not already defined
     if (typeof window.descriptions === 'undefined' || typeof window.descriptions !== 'object') {
         window.descriptions = {};
@@ -10,9 +13,14 @@ $(document).ready(function() {
      * Add or update a product in the global descriptions object.
      *
      * @param {Object} product - The product object to add or update.
-     * @returns {Object} - The updated descriptions object.
+     * @returns {Object|false} - The updated descriptions object or false when there is no update to score
      */
     function pushToDescriptions(product) {
+        if (product.id in window.descriptions &&
+            window.descriptions[product.id].score === product.score
+        ) {
+            return false;
+        }
         window.descriptions[product.id] = product;
         return window.descriptions;
     }
@@ -28,13 +36,23 @@ $(document).ready(function() {
 
     /**
      * Update the minimal and maximal scores in the dashboard.
+     * Set progress bar percentage.
      *
      * @param {Array} descriptions - Array of product descriptions.
      */
     function updateScores(descriptions) {
-        const validScores = descriptions.length > 0 && descriptions.every(description => typeof description['score'] === 'number' && description['score'] !== undefined);
+        const validScores = descriptions.filter(description => typeof description['score'] === 'number');
 
-        if (validScores) {
+        const allScoresCount = descriptions.length;
+        const validScoresCount = validScores.length;
+        const progressPercentage = allScoresCount ? ((validScoresCount / allScoresCount) * 100).toFixed(2) : 1;
+        const progressPercentageString = `${progressPercentage}%`;
+
+        const progressBarElm = $('#loading-progress-bar');
+        progressBarElm.width(progressPercentageString);
+        progressBarElm.text(progressPercentageString);
+
+        if (allScoresCount === validScoresCount) {
             const allScores = descriptions.map(description => description.score);
             const resultsContentElement = $('#dashboard');
 
@@ -63,6 +81,9 @@ $(document).ready(function() {
      * @param {Object} product - The product object to update.
      */
     function updateList(product) {
+        if (!pushToDescriptions(product))
+            return;
+
         const descriptionRow = $(`#${product.hash}`);
 
         let rowClass;
@@ -79,7 +100,6 @@ $(document).ready(function() {
         descriptionRow.removeClass().addClass(rowClass);
         descriptionRow.find('.score').html(product['score']);
 
-        pushToDescriptions(product);
         updateScores(getDescriptions());
     }
 
@@ -92,16 +112,16 @@ $(document).ready(function() {
         const targetElement = $(`#${targetId}`);
         const offset = targetElement.offset().top - ($(window).height() / 2) + (targetElement.height() / 2);
 
-        $('html, body').animate({ scrollTop: offset }, function() {
+        $('html, body').animate({ scrollTop: offset }, 1000, function () {
             targetElement.addClass('zoomed');
             setTimeout(() => {
                 targetElement.removeClass('zoomed');
-            }, 1500);
+            }, 500);
         });
     }
 
     // Listen for click events on score links to trigger smooth scroll and zoom animation
-    $(document).on('click', '.score-link', function(event) {
+    $(document).on('click', '.score-link', function (event) {
         event.preventDefault();
         const targetId = $(this).attr('href').substring(1);
         smoothScrollTo(targetId);
@@ -109,8 +129,9 @@ $(document).ready(function() {
 
     // Listen for product updates from the server via Echo
     window.Echo.channel('product.updates')
-        .listen('.updated', function(e) {
-            console.log("product.updates received with:", e);
+        .listen('.updated', function (e) {
+            // Only on Debug
+            // console.debug("product.updates received with:", e);
             updateList(e.product);
         });
 });

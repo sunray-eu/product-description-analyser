@@ -1,0 +1,1 @@
+supervisord -nc supervisor.ini

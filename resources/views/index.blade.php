@@ -4,6 +4,7 @@
 <head>
     <title>Product Description Analyser</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
     @if (isset($descriptions))
@@ -19,7 +20,7 @@
             transition: transform 0.3s ease-in-out;
         }
         .zoom-animation.zoomed {
-            transform: scale(1.2);
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -41,12 +42,18 @@
 
         @php
             $allNumeric = false;
+            $scores = array_column($descriptions, 'score');
+            $validScores = isset($descriptions) ? array_filter($scores, fn($score) => is_numeric($score)) : [];
+
+            $scoresCount = isset($descriptions) && count($descriptions) > 0 ? count($descriptions) : 1;
+            $validScoresCount = count($validScores);
+
+            $completedPercentage = number_format(($validScoresCount / $scoresCount) * 100, 2);
+
             if (isset($descriptions) && count($descriptions) > 0) {
-                $scores = array_column($descriptions, 'score');
                 $allNumeric = array_reduce($scores, fn($carry, $score) => $carry && is_numeric($score), true);
                 if ($allNumeric) {
-                    $validScores = array_filter($scores, fn($score) => is_numeric($score));
-                    if (count($validScores) > 0) {
+                    if ($validScoresCount > 0) {
                         $minScore = min($validScores);
                         $maxScore = max($validScores);
                         $minScoreHash = array_search($minScore, array_column($descriptions, 'score'));
@@ -65,7 +72,12 @@
                         <h2>Minimal score: <a href="#{{ $descriptions[$minScoreHash]['hash'] }}" class="score-link">{{ $minScore }}</a></h2>
                         <h2>Maximal score: <a href="#{{ $descriptions[$maxScoreHash]['hash'] }}" class="score-link">{{ $maxScore }}</a></h2>
                     @else
-                        <div id="dashboard-loader" class="loader"></div>
+                        <div id="dashboard-loader">
+                            <div class="loader mt-4"></div>
+                            <div id="loading-progress" class="progress mt-4">
+                                <div id="loading-progress-bar" class="progress-bar" role="progressbar" style="width: {{ $completedPercentage }}%" aria-valuenow="{{ $validScoresCount }}" aria-valuemin="0" aria-valuemax="{{ $scoresCount }}">{{ $completedPercentage }}%</div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
