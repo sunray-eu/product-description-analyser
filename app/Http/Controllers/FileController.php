@@ -2,186 +2,191 @@
 
 namespace SunrayEu\ProductDescriptionAnalyser\App\Http\Controllers;
 
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use SunrayEu\ProductDescriptionAnalyser\App\Jobs\AnalyzeProductDescription;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\Product;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\File;
+use Illuminate\Support\Facades\DB;
 
 class FileController extends Controller
 {
-    public function upload(Request $request)
+    /**
+     * Display the list of products for the currently selected file.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
+    public function index(Request $request)
     {
-        // Validation
-        $request->validate(['file' => 'required|file|mimes:csv,txt']);
+        $fileHash = $this->getSelectedFileHash();
+        $file = File::with('products:id,name,description,hash,score')->where('hash', $fileHash)->first();
 
-        $file = $request->file('file');
-        $file_md5 = md5_file($file);
-        $file_data = [];
-        $file_handle = fopen($file, "r");
-        $file_name = htmlspecialchars($file->getClientOriginalName());
-
-        // Loop through each line in the file
-        while (($row = fgetcsv($file_handle)) !== FALSE) {
-            $file_data[] = $row;
-        }
-        $csv_header = array_shift($file_data);
-
-        // get file or create in db based on md5 hash
-        $file_db = File::firstOrCreate(
-            ['hash' => $file_md5],
-            ['name' => $file_name]
-        );
-        $file_hash_products = null;
-
-        if (!$file_db->wasRecentlyCreated) {
-            //? File is new, so for sure we do not have connections
-            $file_hash_products = $file_db->products()->get(['hash', 'score']);
-        }
-
-        $output_data = [];
-
-        foreach ($file_data as $row) {
-            $csv_product_data = array_combine($csv_header, $row);
-
-            // TODO: create table with Products and add foreign key for descriptions as there can be duplicates
-            // TODO: For now, used md5 of name + description
-            $product_name = strip_tags($csv_product_data['name']);
-            $product_description = strip_tags($csv_product_data['description']);
-            $description_hash = md5($product_name . $product_description);
-
-            $file_data_obj = [
-                'name' => $product_name,
-                'hash' => $description_hash,
-                'description' => $product_description,
-                'score' => null
-            ];
-
-            $product_from_db = null;
-
-            if ($file_hash_products)
-                $product_from_db = $file_hash_products->firstWhere('hash', '=', $description_hash);
-
-            // If the product does not exist from 'product belongsTo file' list, then try to get it by hash
-            if (!$product_from_db) {
-                $product_from_db = Product::firstWhere('hash', '=', $description_hash);
-
-                // TODO: there can be duplicates in name + desc md5, find solution
-                // If it exist by hash, attach to file
-                if ($product_from_db) {
-                    $file_db->products()->attach($product_from_db->id);
-                }
-            }
-
-            if ($product_from_db) {
-                $file_data_obj['score'] = $product_from_db['score'];
-            } else {
-                $product_from_db = $file_db->products()->create([
-                    'name' => $product_name,
-                    'description' => $product_description,
-                    'hash' => $description_hash
-                ]);
-            }
-
-            if (is_null($product_from_db->score)) {
-                AnalyzeProductDescription::dispatch($product_from_db);
-            }
-
-            $file_data_obj['id'] = $product_from_db->id;
-
-            $output_data[] = $file_data_obj;
-        }
-
-
-
-        // here set file to session
-        $this->setSelectedFileHash($file_md5);
-
+        $products = $file ? $file->products->toArray() : [];
         return view('index', [
-            'descriptions' => $output_data,
-            'filename' => $file_name
-        ])->with('success', 'File uploaded successfully!');
+            'descriptions' => $products,
+            'filename' => $file ? $file->name : null
+        ]);
     }
 
-    private function getSelectedFileHash(): string|null
+    /**
+     * Handle the file upload and process the contents.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function upload(Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:csv,txt']);
+        $file = $request->file('file');
+        $fileName = htmlspecialchars($file->getClientOriginalName());
+        $fileHash = md5_file($file);
+
+        try {
+            $fileData = $this->parseFile($file);
+            $fileDb = DB::transaction(function () use ($fileHash, $fileName, $fileData) {
+                return $this->processFileData($fileHash, $fileName, $fileData);
+            });
+
+            $this->setSelectedFileHash($fileHash);
+            $outputData = $fileDb->products->toArray();
+
+            return view('index', [
+                'descriptions' => $outputData,
+                'filename' => $fileName
+            ])->with('success', 'File uploaded successfully!');
+        } catch (\Exception $e) {
+            Log::error('File upload failed: ' . $e->getMessage());
+            return redirect()->back()->withErrors('File upload failed. Please try again.');
+        }
+    }
+
+    /**
+     * Re-analyze the products for the currently selected file.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function reanalyse(Request $request)
+    {
+        $fileHash = $this->getSelectedFileHash();
+        $file = File::with('products')->where('hash', $fileHash)->first();
+
+        if ($file) {
+            $file->products()->update(['score' => null]);
+            foreach ($file->products as $product) {
+                AnalyzeProductDescription::dispatch($product);
+            }
+        }
+
+        return redirect()->route('index')->with('success', 'Reanalysis started.');
+    }
+
+    /**
+     * Deselect the currently selected file.
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View
+     */
+    public function deselect(Request $request)
+    {
+        $this->removeSelectedFileHash();
+        return view('index', ['descriptions' => [], 'filename' => '']);
+    }
+
+    /**
+     * Parse the uploaded file and return the data.
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @return array
+     * @throws \Exception
+     */
+    private function parseFile($file)
+    {
+        $fileHandle = fopen($file, "r");
+        $data = [];
+        while (($row = fgetcsv($fileHandle)) !== false) {
+            $data[] = $row;
+        }
+        fclose($fileHandle);
+
+        if (empty($data)) {
+            throw new \Exception('The uploaded file is empty.');
+        }
+
+        return $data;
+    }
+
+    /**
+     * Process the parsed file data and store it in the database.
+     *
+     * @param string $fileHash
+     * @param string $fileName
+     * @param array $fileData
+     * @return File
+     */
+    private function processFileData($fileHash, $fileName, $fileData)
+    {
+        $csvHeader = array_shift($fileData);
+        $file = File::firstOrCreate(['hash' => $fileHash], ['name' => $fileName]);
+
+        foreach ($fileData as $row) {
+            $productData = array_combine($csvHeader, $row);
+            $this->processProductData($file, $productData);
+        }
+
+        return $file;
+    }
+
+    /**
+     * Process individual product data and store it in the database.
+     *
+     * @param File $file
+     * @param array $productData
+     */
+    private function processProductData(File $file, array $productData)
+    {
+        $productName = strip_tags($productData['name']);
+        $productDescription = strip_tags($productData['description']);
+        $descriptionHash = md5($productName . $productDescription);
+
+        $product = Product::firstOrCreate(
+            ['hash' => $descriptionHash],
+            ['name' => $productName, 'description' => $productDescription]
+        );
+
+        $file->products()->syncWithoutDetaching([$product->id]);
+
+        if (is_null($product->score)) {
+            AnalyzeProductDescription::dispatch($product);
+        }
+    }
+
+    /**
+     * Get the selected file hash from the session.
+     *
+     * @return string|null
+     */
+    private function getSelectedFileHash(): ?string
     {
         return session()->get('file_hash');
     }
 
+    /**
+     * Set the selected file hash in the session.
+     *
+     * @param string $hash
+     */
     private function setSelectedFileHash(string $hash): void
     {
         session()->put('file_hash', $hash);
     }
 
+    /**
+     * Remove the selected file hash from the session.
+     */
     private function removeSelectedFileHash(): void
     {
-        session()->remove('file_hash');
-    }
-
-    public function index(Request $request)
-    {
-        $products_data = [];
-
-        // Get the file hash of currently selected file
-        $fileHash = $this->getSelectedFileHash();
-
-        $file_db = File::firstWhere('hash', '=', $fileHash);
-
-        if ($file_db) {
-            $products_data = $file_db->products();
-            $products_data = $products_data->get(['id', 'name', 'description', 'hash', 'score']);
-
-            // Reanalyse empty
-            if ($products_data) {
-                foreach ($products_data as $product) {
-                    // TODO: fix, not working
-                    // AnalyzeProductDescription::dispatch($product);
-                }
-
-                $products_data = $products_data->toArray();
-            }
-        }
-
-        return view('index', [
-            'descriptions' => $products_data,
-            'filename' => $file_db ? $file_db->name : null
-        ]);
-    }
-
-    public function reanalyse(Request $request)
-    {
-        $products_data = [];
-
-        // Get current file
-        $fileHash = $this->getSelectedFileHash();
-
-        $file_db = File::firstWhere('hash', '=', $fileHash);
-
-        if ($file_db) {
-            $file_db->products()->update(['score' => NULL]);
-
-            $products_data = $file_db->products();
-            $products_data = $products_data->get(['id', 'name', 'description', 'hash', 'score']);
-
-            // Reanalyse all
-            if ($products_data) {
-                foreach ($products_data as $product) {
-                    AnalyzeProductDescription::dispatch($product);
-                }
-
-                $products_data = $products_data->toArray();
-            }
-        }
-
-        return view('index', [
-            'descriptions' => $products_data,
-            'filename' => $file_db ? $file_db->name : null
-        ]);
-    }
-
-    public function deselect(Request $request){
-        $this->removeSelectedFileHash();
-        return view('index', ['descriptions' => [], 'filename' => '']);
+        session()->forget('file_hash');
     }
 }
