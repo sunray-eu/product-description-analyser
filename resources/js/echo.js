@@ -97,6 +97,6 @@ function updateList(product) {
 
 window.Echo.channel('product.updates')
     .listen('.updated', (e) => {
-        console.log("product.updates received with:", e.product)
+        console.log("product.updates received with:", e)
         updateList(e.product);
     });

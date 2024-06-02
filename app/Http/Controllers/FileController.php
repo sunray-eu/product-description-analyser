@@ -2,6 +2,7 @@
 
 namespace SunrayEu\ProductDescriptionAnalyser\App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use SunrayEu\ProductDescriptionAnalyser\App\Jobs\AnalyzeProductDescription;
@@ -81,13 +82,18 @@ class FileController extends Controller
                     'description' => $product_description,
                     'hash' => $description_hash
                 ]);
+            }
 
+            if (is_null($product_from_db->score)) {
                 AnalyzeProductDescription::dispatch($product_from_db);
             }
+
             $file_data_obj['id'] = $product_from_db->id;
 
             $output_data[] = $file_data_obj;
         }
+
+
 
         // here set file to session
         $this->setSelectedFileHash($file_md5);

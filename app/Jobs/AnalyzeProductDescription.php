@@ -14,6 +14,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 
 use Google\Cloud\Language\LanguageClient;
+use SunrayEu\ProductDescriptionAnalyser\App\Utils\LanguageClientInstance;
 
 class AnalyzeProductDescription implements ShouldQueue, ShouldBeUnique
 {
@@ -42,11 +43,13 @@ class AnalyzeProductDescription implements ShouldQueue, ShouldBeUnique
      */
     public function handle(): void
     {
+        $gcpLangClient = LanguageClientInstance::getClient();
         // TODO: use google LanguageClient, and more alternatives, later also local
-        $client = new LanguageClient(['keyFilePath' => storage_path('app/google-cloud-key.json')]);
-        $response = $client->analyzeSentiment($this->product->description);
+        $response = $gcpLangClient->analyzeSentiment($this->product->description);
         $score = $response->sentiment()['score'];
         $this->product->update(['score' => $score]);
+
         ProductDescriptionProcessed::dispatch($this->product);
     }
+
 }
