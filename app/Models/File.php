@@ -13,7 +13,7 @@ class File extends Model
     protected $fillable = ['hash', 'name'];
 
     /**
-     * The product messages that belong to the .
+     * The product messages that belong to the file.
      */
     public function products(): BelongsToMany
     {
