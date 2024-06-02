@@ -91,7 +91,7 @@ class FileController extends Controller
     public function deselect(Request $request)
     {
         $this->removeSelectedFileHash();
-        return view('index', ['descriptions' => [], 'filename' => '']);
+        return view('index', ['descriptions' => []]);
     }
 
     /**
