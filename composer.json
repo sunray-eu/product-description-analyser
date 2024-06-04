@@ -2,7 +2,7 @@
     "name": "sunray-eu/product-description-analyser",
     "description": "Laravel application for product description analysis",
     "type": "project",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "keywords": [
         "laravel",
         "framework",
