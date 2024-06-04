@@ -2,12 +2,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Event;
-use Google\Cloud\Language\LanguageClient;
 use Illuminate\Support\Facades\Facade;
 use Mockery;
-use SunrayEu\ProductDescriptionAnalyser\App\Events\ProductDescriptionProcessed;
-use SunrayEu\ProductDescriptionAnalyser\App\Utils\LanguageClientInstance;
-use Tests\Mocks\MockLanguageClientInstance;
+use SunrayEu\ProductDescriptionAnalyser\App\Utils\SentimentAnalyser;
 use Tests\TestCase;
 use SunrayEu\ProductDescriptionAnalyser\App\Jobs\AnalyzeProductDescription;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\Product;
@@ -35,17 +32,7 @@ class AnalyzeProductDescriptionTest extends TestCase
         parent::tearDown();
     }
 
-    protected function clearStaticProperties()
-    {
-        // Reset any static properties that may hold state between tests
-        $reflectionClass = new \ReflectionClass(LanguageClientInstance::class);
-        $instanceProperty = $reflectionClass->getProperty('instance');
-        $instanceProperty->setAccessible(true);
-        $instanceProperty->setValue(null);
-    }
-
-    /** @test */
-    public function it_dispatches_analyze_product_description_job()
+    public function test_it_dispatches_analyze_product_description_job()
     {
         Queue::fake();
 
@@ -58,29 +45,21 @@ class AnalyzeProductDescriptionTest extends TestCase
         });
     }
 
-    // TODO: fix
-    /** @test */
-    public function it_processes_analyze_product_description_job()
+    public function test_it_processes_analyze_product_description_job()
     {
         $product = Product::factory()->create([
             'score' => null,
             'description' => 'Test description'
         ]);
 
-        // Create a mock LanguageClient
-        // $languageClientMock = Mockery::mock(LanguageClient::class);
-        // $languageClientMock->shouldReceive('analyzeSentiment')
-        //     ->with('Test description')
-        //     ->andReturn(new class {
-        //         public function sentiment() {
-        //             return ['score' => 0.8];
-        //         }
-        //     });
+       // Create a mock SentimentAnalyser
+       $sentimentAnalyserMock = Mockery::mock(SentimentAnalyser::class);
+       $sentimentAnalyserMock->shouldReceive('getSentimentScore')
+           ->with('Test description')
+           ->andReturn(0.8);
 
-        // Mock the LanguageClientInstance
-        // $languageClientInstanceMock = Mockery::mock('alias:' . LanguageClientInstance::class);
-        // $languageClientInstanceMock->shouldReceive('getClient')->andReturn($languageClientMock);
-
+       // Bind the mock to the container
+       $this->app->instance(SentimentAnalyser::class, $sentimentAnalyserMock);
 
         $job = new AnalyzeProductDescription($product);
         $job->handle();

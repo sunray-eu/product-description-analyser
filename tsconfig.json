@@ -1,0 +1,49 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    // "extends": [
+    //   "@tsconfig/node21/tsconfig.json",
+    //   // "@tsconfig/strictest/tsconfig.json",
+    // ],
+    "include": [
+      "scripts/**/*.ts"
+    ],
+    "exclude": [
+      "**/__tests__",
+      "**/*.{spec,test}.ts"
+    ],
+    "compilerOptions": {
+      "noImplicitAny": false,
+
+      "target": "es2020",
+      "module": "ESNext",
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "sourceMap": true,
+      "declaration": true,
+      "declarationMap": true,
+      "removeComments": true,
+      "strict": true,
+      "strictNullChecks": true,
+      "strictFunctionTypes": true,
+      "strictPropertyInitialization": true,
+      "noImplicitThis": true,
+      "resolveJsonModule": true,
+      "noImplicitReturns": true,
+      "noFallthroughCasesInSwitch": true,
+      // "noUnusedParameters": true,
+      // "noUnusedLocals": true,
+      "forceConsistentCasingInFileNames": true,
+      "lib": ["es2020", "esnext.asynciterable"],
+
+
+      "rootDir": "./scripts",
+      "outDir": "./dist",
+      "types": [
+        "node",
+        "jest"
+      ],
+    },
+    "ts-node": {
+      "esm": true, // «———— enabling ESM for ts-node
+    },
+  }

@@ -40,7 +40,7 @@ This is a Laravel application designed for analyzing product description's senti
 ## Features
 
 - Analyzes product descriptions.
-- Integrates with Google Cloud Natural Language API.
+- Integrates with Google Cloud Natural Language API OR NLP.js node library to get sentiment score (configurable).
 - Real-time notifications using Laravel Broadcast/Reverb and Laravel Echo.
 - Utilizes Redis for caching.
 - Sentiment analysis to determine the positivity or negativity of product descriptions.
@@ -71,11 +71,14 @@ cp .env.example .env
 ```
 
 ## GCP environment variables needed for sentiment analysis
-| ENV name                         | description                                      |
-| -------------------------------- | ------------------------------------------------ |
-| GCP_LANG_CLIENT_SA_KEY_FILE_PATH | Path to file where service account key is stored |
-| GCP_LANG_CLIENT_SA_KEY           | Service account key in raw json format           |
-|                                  | Either one of them must be set                   |
+| ENV name                         | description                                                                                                                                                                                                                   | default  |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| GCP_LANG_CLIENT_SA_KEY_FILE_PATH | Path to file where service account key is stored (relative to `./storage` folder, so for example when set to `secrets/sa-for-sentiment-analysis.json`, it will resolve to `./storage/secrets/sa-for-sentiment-analysis.json`) |          |
+| GCP_LANG_CLIENT_SA_KEY           | Service account key in raw json format                                                                                                                                                                                        |          |
+|                                  | Either one of them must be set for GCP to work correctly                                                                                                                                                                      |          |
+| SENTIMENT_PROCESSOR_TYPE         |                                                                                                                                                                                                                               | `nlp.js` |
+
+- When using `nlp.js`, it will run `npm run analyse-sentiment` to get sentiment score
 
 ### Step 4: Generate application key
 
