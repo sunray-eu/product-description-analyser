@@ -1,6 +1,7 @@
 <?php
 
 namespace SunrayEu\ProductDescriptionAnalyser\App\Utils;
+
 use Google\Cloud\Language\LanguageClient;
 
 class LanguageClientInstance
@@ -12,10 +13,14 @@ class LanguageClientInstance
      */
     public function __construct()
     {
-        $this->gcpLangClient = new LanguageClient(['keyFilePath' => storage_path('app/google-cloud-key.json')]);
+        $this->gcpLangClient = new LanguageClient([
+            'keyFilePath' => $_ENV['GCP_LANG_CLIENT_SA_KEY_FILE_PATH'],
+            'keyFile' => $_ENV['GCP_LANG_CLIENT_SA_KEY']
+        ]);
     }
 
-    public static function getInstance(){
+    public static function getInstance()
+    {
         if (!self::$instance) {
             self::$instance = new self();
         }
@@ -23,7 +28,8 @@ class LanguageClientInstance
         return self::$instance;
     }
 
-    public static function getClient(){
+    public static function getClient()
+    {
         return self::getInstance()->gcpLangClient;
     }
 

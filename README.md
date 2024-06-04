@@ -12,6 +12,7 @@ This is a Laravel application designed for analyzing product description's senti
     - [Step 1: Clone the repository](#step-1-clone-the-repository)
     - [Step 2: Run setup script](#step-2-run-setup-script)
     - [Step 3: Environment setup](#step-3-environment-setup)
+  - [GCP environment variables needed for sentiment analysis](#gcp-environment-variables-needed-for-sentiment-analysis)
     - [Step 4: Generate application key](#step-4-generate-application-key)
     - [Step 5: Run migrations](#step-5-run-migrations)
   - [Running the Application](#running-the-application)
@@ -68,6 +69,13 @@ Copy the `.env.example` to `.env` and configure your environment variables.
 ```sh
 cp .env.example .env
 ```
+
+## GCP environment variables needed for sentiment analysis
+| ENV name                         | description                                      |
+| -------------------------------- | ------------------------------------------------ |
+| GCP_LANG_CLIENT_SA_KEY_FILE_PATH | Path to file where service account key is stored |
+| GCP_LANG_CLIENT_SA_KEY           | Service account key in raw json format           |
+|                                  | Either one of them must be set                   |
 
 ### Step 4: Generate application key
 
