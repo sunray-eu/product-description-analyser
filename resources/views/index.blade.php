@@ -22,6 +22,19 @@
         .zoom-animation.zoomed {
             transform: scale(1.1);
         }
+
+        .alert {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .alert.fade {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
     </style>
 </head>
 
@@ -29,11 +42,25 @@
     <div class="container mt-5">
         <h1>Product Description Sentiment Analyser</h1>
         <br />
+        @if ($errors->any())
+            <div class="alert alert-danger show" role="alert">
+            <ul>
+                @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <script>
+                setTimeout(function() {
+                    document.querySelector('.alert').classList.add('fade');
+                }, 5000);
+            </script>
+        </div>
+        @endif
         <form action="{{ route('upload') }}" method="post" enctype="multipart/form-data">
             @csrf
             <div class="mb-3">
                 <label for="formFile" class="form-label">Upload CSV file</label>
-                <input class="form-control" type="file" id="formFile" name="file" {{ !isset($fileName) && 'required' }}>
+                <input class="form-control" type="file" id="formFile" name="file" {{ empty($fileName) ? 'required' : null }}>
             </div>
             <button type="submit" class="btn btn-primary">Upload</button>
             <button type="submit" formaction="{{ route('re-analyse') }}" class="btn btn-secondary">Force re-analyse</button>
