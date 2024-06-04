@@ -24,8 +24,8 @@
     "autoload": {
         "psr-4": {
             "SunrayEu\\ProductDescriptionAnalyser\\App\\": "app/",
-            "SunrayEu\\ProductDescriptionAnalyser\\Database\\Factories\\": "database/factories/",
-            "SunrayEu\\ProductDescriptionAnalyser\\Database\\Seeders\\": "database/seeders/"
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
