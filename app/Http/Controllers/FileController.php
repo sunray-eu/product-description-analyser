@@ -8,6 +8,7 @@ use SunrayEu\ProductDescriptionAnalyser\App\Jobs\AnalyzeProductDescription;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\Product;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\File;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class FileController extends Controller
 {
@@ -44,6 +45,8 @@ class FileController extends Controller
 
         try {
             $fileData = $this->parseFile($file);
+            $this->validateFileData($fileData);
+
             $fileDb = DB::transaction(function () use ($fileHash, $fileName, $fileData) {
                 return $this->processFileData($fileHash, $fileName, $fileData);
             });
@@ -57,7 +60,7 @@ class FileController extends Controller
             ])->with('success', 'File uploaded successfully!');
         } catch (\Exception $e) {
             Log::error('File upload failed: ' . $e->getMessage());
-            return redirect()->back()->withErrors('File upload failed. Please try again.');
+            return redirect()->back()->withErrors('File upload failed. Please try again. Error: ' . $e->getMessage());
         }
     }
 
@@ -159,6 +162,32 @@ class FileController extends Controller
 
         if (is_null($product->score)) {
             AnalyzeProductDescription::dispatch($product);
+        }
+    }
+
+    /**
+     * Validate the uploaded file data structure
+     *
+     * @param array $fileData
+     * @throws ValidationException
+     */
+    private function validateFileData(array $fileData)
+    {
+        if (count($fileData) === 0) {
+            throw ValidationException::withMessages([
+                'file' => 'CSV file is empty!'
+            ]);
+        }
+
+        $expectedHeaders = ['name', 'description'];
+        $actualHeaders = $fileData[0];
+
+        $missingHeaders = array_diff($expectedHeaders, $actualHeaders);
+
+        if (!empty($missingHeaders)) {
+            throw ValidationException::withMessages([
+                'file' => 'Missing required headers in CSV file: ' . implode(', ', $missingHeaders)
+            ]);
         }
     }
 
