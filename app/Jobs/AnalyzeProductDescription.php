@@ -20,7 +20,7 @@ class AnalyzeProductDescription implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected Product $product;
+    public Product $product;
 
     /**
      * Create a new job instance.

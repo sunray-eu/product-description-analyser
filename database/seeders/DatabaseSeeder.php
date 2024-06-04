@@ -1,8 +1,8 @@
 <?php
 
-namespace SunrayEu\ProductDescriptionAnalyser\Database\Seeders;
+namespace Database\Seeders;
 
-use App\Models\User;
+use SunrayEu\ProductDescriptionAnalyser\App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
