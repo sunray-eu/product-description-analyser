@@ -12,8 +12,7 @@ class FileControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_displays_the_list_of_products_for_the_selected_file()
+    public function test_it_displays_the_list_of_products_for_the_selected_file()
     {
         $file = File::factory()->hasProducts(3)->create();
         session(['file_hash' => $file->hash]);
@@ -30,8 +29,7 @@ class FileControllerTest extends TestCase
         $response->assertViewHas('filename', $file->name);
     }
 
-    /** @test */
-    public function it_uploads_a_file_and_processes_its_contents()
+    public function test_it_uploads_a_file_and_processes_its_contents()
     {
         Storage::fake('local');
 
@@ -49,8 +47,7 @@ class FileControllerTest extends TestCase
         $this->assertDatabaseHas('products', ['name' => 'Product2', 'description' => 'Description2']);
     }
 
-    /** @test */
-    public function it_validates_the_uploaded_file()
+    public function test_it_validates_the_uploaded_file()
     {
         $response = $this->post('/upload', ['file' => 'not_a_file']);
 

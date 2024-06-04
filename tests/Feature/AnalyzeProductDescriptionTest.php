@@ -2,13 +2,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Event;
-use Google\Cloud\Language\LanguageClient;
 use Illuminate\Support\Facades\Facade;
 use Mockery;
-use SunrayEu\ProductDescriptionAnalyser\App\Events\ProductDescriptionProcessed;
-use SunrayEu\ProductDescriptionAnalyser\App\Utils\LanguageClientInstance;
 use SunrayEu\ProductDescriptionAnalyser\App\Utils\SentimentAnalyser;
-use Tests\Mocks\MockLanguageClientInstance;
 use Tests\TestCase;
 use SunrayEu\ProductDescriptionAnalyser\App\Jobs\AnalyzeProductDescription;
 use SunrayEu\ProductDescriptionAnalyser\App\Models\Product;
@@ -36,17 +32,7 @@ class AnalyzeProductDescriptionTest extends TestCase
         parent::tearDown();
     }
 
-    protected function clearStaticProperties()
-    {
-        // Reset any static properties that may hold state between tests
-        $reflectionClass = new \ReflectionClass(LanguageClientInstance::class);
-        $instanceProperty = $reflectionClass->getProperty('instance');
-        $instanceProperty->setAccessible(true);
-        $instanceProperty->setValue(null);
-    }
-
-    /** @test */
-    public function it_dispatches_analyze_product_description_job()
+    public function test_it_dispatches_analyze_product_description_job()
     {
         Queue::fake();
 
@@ -59,8 +45,7 @@ class AnalyzeProductDescriptionTest extends TestCase
         });
     }
 
-    /** @test */
-    public function it_processes_analyze_product_description_job()
+    public function test_it_processes_analyze_product_description_job()
     {
         $product = Product::factory()->create([
             'score' => null,

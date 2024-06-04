@@ -11,8 +11,7 @@ class ProductDescriptionProcessedTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_dispatches_product_description_processed_event()
+    public function test_it_dispatches_product_description_processed_event()
     {
         Event::fake();
 
@@ -25,8 +24,7 @@ class ProductDescriptionProcessedTest extends TestCase
         });
     }
 
-    /** @test */
-    public function it_broadcasts_on_correct_channel()
+    public function test_it_broadcasts_on_correct_channel()
     {
         $product = Product::factory()->create();
         $event = new ProductDescriptionProcessed($product);
@@ -34,8 +32,7 @@ class ProductDescriptionProcessedTest extends TestCase
         $this->assertEquals('product.updates', $event->broadcastOn()->name);
     }
 
-    /** @test */
-    public function it_has_correct_broadcast_name()
+    public function test_it_has_correct_broadcast_name()
     {
         $product = Product::factory()->create();
         $event = new ProductDescriptionProcessed($product);
