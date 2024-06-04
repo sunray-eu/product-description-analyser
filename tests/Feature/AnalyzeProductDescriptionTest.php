@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Facade;
 use Mockery;
 use SunrayEu\ProductDescriptionAnalyser\App\Events\ProductDescriptionProcessed;
 use SunrayEu\ProductDescriptionAnalyser\App\Utils\LanguageClientInstance;
+use SunrayEu\ProductDescriptionAnalyser\App\Utils\SentimentAnalyser;
 use Tests\Mocks\MockLanguageClientInstance;
 use Tests\TestCase;
 use SunrayEu\ProductDescriptionAnalyser\App\Jobs\AnalyzeProductDescription;
@@ -58,7 +59,6 @@ class AnalyzeProductDescriptionTest extends TestCase
         });
     }
 
-    // TODO: fix
     /** @test */
     public function it_processes_analyze_product_description_job()
     {
@@ -67,20 +67,14 @@ class AnalyzeProductDescriptionTest extends TestCase
             'description' => 'Test description'
         ]);
 
-        // Create a mock LanguageClient
-        // $languageClientMock = Mockery::mock(LanguageClient::class);
-        // $languageClientMock->shouldReceive('analyzeSentiment')
-        //     ->with('Test description')
-        //     ->andReturn(new class {
-        //         public function sentiment() {
-        //             return ['score' => 0.8];
-        //         }
-        //     });
+       // Create a mock SentimentAnalyser
+       $sentimentAnalyserMock = Mockery::mock(SentimentAnalyser::class);
+       $sentimentAnalyserMock->shouldReceive('getSentimentScore')
+           ->with('Test description')
+           ->andReturn(0.8);
 
-        // Mock the LanguageClientInstance
-        // $languageClientInstanceMock = Mockery::mock('alias:' . LanguageClientInstance::class);
-        // $languageClientInstanceMock->shouldReceive('getClient')->andReturn($languageClientMock);
-
+       // Bind the mock to the container
+       $this->app->instance(SentimentAnalyser::class, $sentimentAnalyserMock);
 
         $job = new AnalyzeProductDescription($product);
         $job->handle();
