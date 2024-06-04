@@ -16,7 +16,6 @@ This is a Laravel application designed for analyzing product description's senti
     - [Step 4: Generate application key](#step-4-generate-application-key)
     - [Step 5: Run migrations](#step-5-run-migrations)
   - [Running the Application](#running-the-application)
-    - [Using Artisan CLI](#using-artisan-cli)
     - [Using run script](#using-run-script)
   - [Project Structure](#project-structure)
     - [Controllers](#controllers)
@@ -36,6 +35,7 @@ This is a Laravel application designed for analyzing product description's senti
 - PHP ^8.3
 - Composer
 - Node.js & npm (for frontend dependencies)
+- supervisord
 
 ## Features
 
@@ -93,17 +93,9 @@ php artisan migrate
 
 ## Running the Application
 
-### Using Artisan CLI
-
-To start the application, you can use Laravel's built-in development server:
-
-```sh
-php artisan serve
-```
-
 ### Using run script
 
-This script starts the application using Supervisor.
+To start the application, you can use this script that starts the application using Supervisor.
 
 ```sh
 ./run.sh
