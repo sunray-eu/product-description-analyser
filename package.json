@@ -3,14 +3,19 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "ci:versionup": "tsx scripts/bump-composer.ts",
+        "ci:versionup:major": "npm run ci:versionup major",
+        "ci:versionup:minor": "npm run ci:versionup minor",
+        "ci:versionup:patch": "npm run ci:versionup patch"
     },
     "devDependencies": {
         "axios": "^1.6.4",
+        "jquery": "^3.7.1",
         "laravel-echo": "^1.16.1",
         "laravel-vite-plugin": "^1.0",
         "pusher-js": "^8.4.0-rc2",
-        "vite": "^5.0",
-        "jquery": "^3.7.1"
+        "tsx": "^4.11.2",
+        "vite": "^5.0"
     }
 }
