@@ -46,7 +46,7 @@ jobs:
         mkdir -p database
         touch database/database.sqlite
 
-    - name: Execute tests (Unit and Feature tests) via PHPUnit/Pest
+    - name: Execute tests (Unit and Feature tests) via PHPUnit/Pest with coverage
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
