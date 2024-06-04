@@ -14,8 +14,8 @@ class LanguageClientInstance
     public function __construct()
     {
         $this->gcpLangClient = new LanguageClient([
-            'keyFilePath' => $_ENV['GCP_LANG_CLIENT_SA_KEY_FILE_PATH'],
-            'keyFile' => $_ENV['GCP_LANG_CLIENT_SA_KEY']
+            'keyFilePath' => $_ENV['GCP_LANG_CLIENT_SA_KEY_FILE_PATH'] ?? null,
+            'keyFile' => $_ENV['GCP_LANG_CLIENT_SA_KEY'] ?? null
         ]);
     }
 
