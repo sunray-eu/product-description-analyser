@@ -16,9 +16,11 @@
         "jquery": "^3.7.1",
         "laravel-echo": "^1.16.1",
         "laravel-vite-plugin": "^1.0",
-        "node-nlp": "^4.27.0",
         "pusher-js": "^8.4.0-rc2",
         "tsx": "^4.11.2",
         "vite": "^5.0"
+    },
+    "dependencies": {
+        "node-nlp": "^4.27.0"
     }
 }
